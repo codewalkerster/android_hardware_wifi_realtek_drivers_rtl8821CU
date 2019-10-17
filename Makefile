@@ -48,11 +48,11 @@ CONFIG_SDIO_HCI = n
 CONFIG_GSPI_HCI = n
 ########################## Features ###########################
 CONFIG_MP_INCLUDED = y
-CONFIG_POWER_SAVING = y
+CONFIG_POWER_SAVING = n
 CONFIG_USB_AUTOSUSPEND = n
 CONFIG_HW_PWRP_DETECTION = n
 CONFIG_WIFI_TEST = n
-CONFIG_BT_COEXIST = y
+CONFIG_BT_COEXIST = n
 CONFIG_INTEL_WIDI = n
 CONFIG_WAPI_SUPPORT = n
 CONFIG_EFUSE_CONFIG_FILE = y
@@ -93,8 +93,9 @@ CONFIG_RTW_SDIO_PM_KEEP_POWER = y
 ###################### MP HW TX MODE FOR VHT #######################
 CONFIG_MP_VHT_HW_TX_MODE = n
 ###################### Platform Related #######################
-CONFIG_PLATFORM_I386_PC = y
-CONFIG_PLATFORM_ARM_RPI = n
+CONFIG_PLATFORM_I386_PC = n
+CONFIG_ARCH_MESON64_ODROIDC2 = y
+CONFIG_PLATFORM_ARM_RPI = y
 CONFIG_PLATFORM_ARM_RPI3 = n
 CONFIG_PLATFORM_ANDROID_X86 = n
 CONFIG_PLATFORM_ANDROID_INTEL_X86 = n
@@ -148,6 +149,7 @@ CONFIG_PLATFORM_RTK129X = n
 CONFIG_PLATFORM_NOVATEK_NT72668 = n
 CONFIG_PLATFORM_HISILICON = n
 CONFIG_PLATFORM_NV_TK1 = n
+CONFIG_PLATFORM_AML = y
 ###############################################################
 
 CONFIG_DRVEXT_MODULE = n
@@ -821,7 +823,86 @@ endif
 
 ########### HAL_RTL8821C #################################
 ifeq ($(CONFIG_RTL8821C), y)
-include $(TopDIR)/rtl8821c.mk
+RTL871X := rtl8821c
+EXTRA_CFLAGS += -DCONFIG_RTL8821C
+
+ifeq ($(CONFIG_USB_HCI), y)
+MODULE_NAME = 8821cu
+endif
+ifeq ($(CONFIG_PCI_HCI), y)
+MODULE_NAME = 8821ce
+endif
+ifeq ($(CONFIG_SDIO_HCI), y)
+MODULE_NAME = 8821cs
+endif
+
+ifeq ($(CONFIG_PLATFORM_NV_TK1), n)
+ifeq ($(CONFIG_PLATFORM_RTK129X), n)
+ifeq ($(CONFIG_PLATFORM_ARM_RPI), n)
+ifeq ($(CONFIG_PLATFORM_ARM_RPI3), n)
+ifeq ($(CONFIG_MP_INCLUDED), y)
+### 8821C Default Enable VHT MP HW TX MODE ###
+EXTRA_CFLAGS += -DCONFIG_MP_VHT_HW_TX_MODE
+CONFIG_MP_VHT_HW_TX_MODE = y
+endif
+endif
+endif
+endif
+endif
+
+_HAL_HALMAC_FILES +=	hal/halmac/halmac_api.o
+
+_HAL_HALMAC_FILES +=	hal/halmac/halmac_88xx/halmac_api_88xx.o \
+			hal/halmac/halmac_88xx/halmac_func_88xx.o \
+			hal/halmac/halmac_88xx/halmac_api_88xx_usb.o \
+			hal/halmac/halmac_88xx/halmac_api_88xx_sdio.o \
+			hal/halmac/halmac_88xx/halmac_api_88xx_pcie.o
+
+_HAL_HALMAC_FILES +=	hal/halmac/halmac_88xx/halmac_8821c/halmac_8821c_pwr_seq.o \
+			hal/halmac/halmac_88xx/halmac_8821c/halmac_api_8821c.o \
+			hal/halmac/halmac_88xx/halmac_8821c/halmac_func_8821c.o \
+			hal/halmac/halmac_88xx/halmac_8821c/halmac_api_8821c_usb.o \
+			hal/halmac/halmac_88xx/halmac_8821c/halmac_api_8821c_sdio.o \
+			hal/halmac/halmac_88xx/halmac_8821c/halmac_api_8821c_pcie.o \
+			hal/halmac/halmac_88xx/halmac_8821c/halmac_8821c_phy.o
+
+_HAL_INTFS_FILES +=	hal/hal_halmac.o
+
+_HAL_INTFS_FILES +=	hal/rtl8821c/rtl8821c_halinit.o \
+			hal/rtl8821c/rtl8821c_mac.o \
+			hal/rtl8821c/rtl8821c_cmd.o \
+			hal/rtl8821c/rtl8821c_phy.o \
+			hal/rtl8821c/rtl8821c_dm.o \
+			hal/rtl8821c/rtl8821c_ops.o \
+			hal/rtl8821c/hal8821c_fw.o
+
+_HAL_INTFS_FILES +=	hal/rtl8821c/$(HCI_NAME)/rtl$(MODULE_NAME)_halinit.o \
+			hal/rtl8821c/$(HCI_NAME)/rtl$(MODULE_NAME)_halmac.o \
+			hal/rtl8821c/$(HCI_NAME)/rtl$(MODULE_NAME)_io.o \
+			hal/rtl8821c/$(HCI_NAME)/rtl$(MODULE_NAME)_xmit.o \
+			hal/rtl8821c/$(HCI_NAME)/rtl$(MODULE_NAME)_recv.o \
+			hal/rtl8821c/$(HCI_NAME)/rtl$(MODULE_NAME)_led.o \
+			hal/rtl8821c/$(HCI_NAME)/rtl$(MODULE_NAME)_ops.o
+
+ifeq ($(CONFIG_SDIO_HCI), y)
+_HAL_INTFS_FILES +=hal/efuse/$(RTL871X)/HalEfuseMask8821C_SDIO.o
+endif
+ifeq ($(CONFIG_USB_HCI), y)
+_HAL_INTFS_FILES +=hal/efuse/$(RTL871X)/HalEfuseMask8821C_USB.o
+endif
+ifeq ($(CONFIG_PCI_HCI), y)
+_HAL_INTFS_FILES +=hal/efuse/$(RTL871X)/HalEfuseMask8821C_PCIE.o
+endif
+
+_OUTSRC_FILES +=	hal/phydm/rtl8821c/halhwimg8821c_bb.o \
+			hal/phydm/rtl8821c/halhwimg8821c_mac.o \
+			hal/phydm/rtl8821c/halhwimg8821c_rf.o \
+			hal/phydm/rtl8821c/phydm_hal_api8821c.o \
+			hal/phydm/rtl8821c/phydm_regconfig8821c.o\
+			hal/phydm/rtl8821c/halphyrf_8821c.o\
+			hal/phydm/rtl8821c/phydm_iqk_8821c.o
+
+_HAL_INTFS_FILES += $(_HAL_HALMAC_FILES)
 endif
 
 ########### AUTO_CFG  #################################
@@ -1088,6 +1169,25 @@ KVER ?= $(shell uname -r)
 KSRC := /lib/modules/$(KVER)/build
 MODDESTDIR := /lib/modules/$(KVER)/kernel/drivers/net/wireless/
 INSTALL_PREFIX :=
+endif
+
+ifeq ($(CONFIG_PLATFORM_AML), y)
+EXTRA_CFLAGS += -DCONFIG_LITTLE_ENDIAN -DCONFIG_PLATFORM_ANDROID
+EXTRA_CFLAGS += -DCONFIG_IOCTL_CFG80211 -DRTW_USE_CFG80211_STA_EVENT
+#EXTRA_CFLAGS += -DCONFIG_USE_USB_BUFFER_ALLOC_RX
+#EXTRA_CFLAGS += -DCONFIG_USE_USB_BUFFER_ALLOC_TX
+ARCH := arm
+CROSS_COMPILE := arm-linux-gnueabihf-
+KSRC := ../../../../../../kernel
+endif
+
+ifeq ($(CONFIG_ARCH_MESON64_ODROIDC2), y)
+#EXTRA_CFLAGS += -DCONFIG_LITTLE_ENDIAN
+ARCH ?= arm64
+CROSS_COMPILE ?= aarch64-none-elf-
+KVER := 3.14
+KSRC ?= ../../../../../kernel/
+CONFIG_RTL8821CU ?= m
 endif
 
 ifeq ($(CONFIG_PLATFORM_ARM_RPI3), y)
