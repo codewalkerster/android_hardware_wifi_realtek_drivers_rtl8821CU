@@ -101,7 +101,8 @@ CONFIG_RTW_SDIO_PM_KEEP_POWER = y
 ###################### MP HW TX MODE FOR VHT #######################
 CONFIG_MP_VHT_HW_TX_MODE = n
 ###################### Platform Related #######################
-CONFIG_ARCH_MESON64_ODROID_COMMON = y
+CONFIG_ARCH_MESON64_ODROID_COMMON = n
+CONFIG_ARCH_MESON64_ODROIDC2 = y
 CONFIG_PLATFORM_I386_PC = n
 CONFIG_PLATFORM_ARM_RPI = y
 CONFIG_PLATFORM_ARM64_RPI = n
@@ -1223,6 +1224,15 @@ ARCH ?= arm64
 CROSS_COMPILE ?= aarch64-linux-gnu-
 KVER := 4.9
 KSRC ?= ../../../../../common/
+CONFIG_RTL8821CU ?= m
+endif
+
+ifeq ($(CONFIG_ARCH_MESON64_ODROIDC2), y)
+#EXTRA_CFLAGS += -DCONFIG_LITTLE_ENDIAN
+ARCH ?= arm64
+CROSS_COMPILE ?= aarch64-none-elf-
+KVER := 3.14
+KSRC ?= ../../../../../kernel/
 CONFIG_RTL8821CU ?= m
 endif
 

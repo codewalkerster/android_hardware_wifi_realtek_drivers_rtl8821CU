@@ -688,8 +688,8 @@ static u64 rtw_get_systime_us(void)
 {
 // Fix build error for Linux >= 4.19
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 39))
-	struct timespec64 ts;
-	getboottime64(&ts);
+	struct timespec ts;
+	get_monotonic_boottime(&ts);
 	return ((u64)ts.tv_sec * 1000000) + ts.tv_nsec / 1000;
 #else
 	struct timeval tv;
