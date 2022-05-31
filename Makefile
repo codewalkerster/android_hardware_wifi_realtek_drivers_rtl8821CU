@@ -1,11 +1,6 @@
 EXTRA_CFLAGS += $(USER_EXTRA_CFLAGS)
 EXTRA_CFLAGS += -O1
 #EXTRA_CFLAGS += -O3
-#EXTRA_CFLAGS += -Wall
-#EXTRA_CFLAGS += -Wextra
-#EXTRA_CFLAGS += -Werror
-#EXTRA_CFLAGS += -pedantic
-#EXTRA_CFLAGS += -Wshadow -Wpointer-arith -Wcast-qual -Wstrict-prototypes -Wmissing-prototypes
 
 EXTRA_CFLAGS += -Wno-unused-variable
 EXTRA_CFLAGS += -Wno-unused-value
@@ -13,7 +8,7 @@ EXTRA_CFLAGS += -Wno-unused-label
 EXTRA_CFLAGS += -Wno-unused-parameter
 EXTRA_CFLAGS += -Wno-unused-function
 EXTRA_CFLAGS += -Wno-unused
-#EXTRA_CFLAGS += -Wno-uninitialized
+EXTRA_CFLAGS += -Wno-vla -g
 EXTRA_CFLAGS += -Wno-implicit-fallthrough
 
 GCC_VER_49 := $(shell echo `$(CC) -dumpversion | cut -f1-2 -d.` \>= 4.9 | bc )
@@ -157,6 +152,7 @@ CONFIG_PLATFORM_RTK119X_AM = n
 CONFIG_PLATFORM_RTK129X = n
 CONFIG_PLATFORM_RTK390X = n
 CONFIG_PLATFORM_NOVATEK_NT72668 = n
+CONFIG_PLATFORM_NOVATEK_NT9852X = n
 CONFIG_PLATFORM_HISILICON = n
 CONFIG_PLATFORM_HISILICON_HI3798 = n
 CONFIG_PLATFORM_NV_TK1 = n
@@ -450,7 +446,7 @@ endif
 EXTRA_CFLAGS += -DCONFIG_RTL8821A
 
 _HAL_INTFS_FILES +=	hal/rtl8812a/hal8821a_fw.o
-		
+
 endif
 
 ifeq ($(CONFIG_BT_COEXIST), y)
@@ -904,7 +900,7 @@ _HAL_INTFS_FILES +=	\
 			hal/$(RTL871X)/$(HCI_NAME)/rtl$(MODULE_SUB_NAME)_led.o \
 			hal/$(RTL871X)/$(HCI_NAME)/rtl$(MODULE_SUB_NAME)_xmit.o \
 			hal/$(RTL871X)/$(HCI_NAME)/rtl$(MODULE_SUB_NAME)_recv.o
-			
+
 ifeq ($(CONFIG_PCI_HCI), y)
 _HAL_INTFS_FILES += hal/$(RTL871X)/$(HCI_NAME)/$(HCI_NAME)_ops_linux.o
 else
@@ -1172,13 +1168,6 @@ endif
 
 ifeq ($(CONFIG_MP_VHT_HW_TX_MODE), y)
 EXTRA_CFLAGS += -DCONFIG_MP_VHT_HW_TX_MODE
-ifeq ($(CONFIG_PLATFORM_I386_PC), y)
-## For I386 X86 ToolChain use Hardware FLOATING
-EXTRA_CFLAGS += -mhard-float
-else
-## For ARM ToolChain use Hardware FLOATING
-EXTRA_CFLAGS += -mfloat-abi=hard
-endif
 endif
 
 ####START RASPBERRY PI SUPPORT
@@ -1229,7 +1218,7 @@ endif
 ifeq ($(CONFIG_PLATFORM_I386_PC), y)
 EXTRA_CFLAGS += -DCONFIG_LITTLE_ENDIAN
 EXTRA_CFLAGS += -DCONFIG_IOCTL_CFG80211 -DRTW_USE_CFG80211_STA_EVENT
-SUBARCH := $(shell uname -m | sed -e s/i.86/i386/)
+SUBARCH := $(shell uname -m | sed -e "s/armv.*/arm/" | sed -e "s/aarch64/arm64/" | sed -e s/i.86/i386/)
 ARCH ?= $(SUBARCH)
 CROSS_COMPILE ?=
 KVER  := $(shell uname -r)
@@ -1366,7 +1355,7 @@ endif
 
 ifeq ($(CONFIG_PLATFORM_ANDROID_X86), y)
 EXTRA_CFLAGS += -DCONFIG_LITTLE_ENDIAN
-SUBARCH := $(shell uname -m | sed -e s/i.86/i386/)
+SUBARCH := $(shell uname -m | sed -e "s/armv.*/arm/" | sed -e "s/aarch64/arm64/" | sed -e s/i.86/i386/)
 ARCH := $(SUBARCH)
 CROSS_COMPILE := /media/DATA-2/android-x86/ics-x86_20120130/prebuilt/linux-x86/toolchain/i686-unknown-linux-gnu-4.2.1/bin/i686-unknown-linux-gnu-
 KSRC := /media/DATA-2/android-x86/ics-x86_20120130/out/target/product/generic_x86/obj/kernel
@@ -1389,7 +1378,7 @@ ifeq ($(CONFIG_PLATFORM_JB_X86), y)
 EXTRA_CFLAGS += -DCONFIG_LITTLE_ENDIAN
 EXTRA_CFLAGS += -DCONFIG_CONCURRENT_MODE
 EXTRA_CFLAGS += -DCONFIG_IOCTL_CFG80211 -DRTW_USE_CFG80211_STA_EVENT
-SUBARCH := $(shell uname -m | sed -e s/i.86/i386/)
+SUBARCH := $(shell uname -m | sed -e "s/armv.*/arm/" | sed -e "s/aarch64/arm64/" | sed -e s/i.86/i386/)
 ARCH := $(SUBARCH)
 CROSS_COMPILE := /home/android_sdk/android-x86_JB/prebuilts/gcc/linux-x86/x86/i686-linux-android-4.7/bin/i686-linux-android-
 KSRC := /home/android_sdk/android-x86_JB/out/target/product/x86/obj/kernel/
@@ -2034,6 +2023,20 @@ KSRC := /Custom/Novatek/TCL/linux-3.8_header
 #KSRC := $(KERNELDIR)
 endif
 
+ifeq ($(CONFIG_PLATFORM_NOVATEK_NT9852X), y)
+EXTRA_CFLAGS += -DCONFIG_PLATFORM_NOVATEK_NT9852X
+EXTRA_CFLAGS += -DCONFIG_LITTLE_ENDIAN
+EXTRA_CFLAGS += -DCONFIG_CONCURRENT_MODE
+EXTRA_CFLAGS += -DCONFIG_IOCTL_CFG80211 -DRTW_USE_CFG80211_STA_EVENT
+EXTRA_CFLAGS += -DCONFIG_USE_USB_BUFFER_ALLOC_RX
+EXTRA_CFLAGS += -DCONFIG_USE_USB_BUFFER_ALLOC_TX
+ARCH ?= arm
+CROSS_COMPILE := arm-ca9-linux-gnueabihf-
+KVER := 4.19.91
+KSRC := /home/novatek/SDK/na51055_linux_sdk_528/BSP/linux-kernel
+EXTRA_CFLAGS += -Wno-incompatible-pointer-types
+endif
+
 ifeq ($(CONFIG_PLATFORM_ARM_TCC8930_JB42), y)
 EXTRA_CFLAGS += -DCONFIG_LITTLE_ENDIAN
 # default setting for Android 4.1, 4.2
@@ -2043,7 +2046,7 @@ ARCH := arm
 CROSS_COMPILE := /home/android_sdk/Telechips/v13.05_r1-tcc-android-4.2.2_tcc893x-evm_build/prebuilts/gcc/linux-x86/arm/arm-eabi-4.6/bin/arm-eabi-
 KSRC := /home/android_sdk/Telechips/v13.05_r1-tcc-android-4.2.2_tcc893x-evm_build/kernel
 MODULE_NAME := wlan
-endif 
+endif
 
 ifeq ($(CONFIG_PLATFORM_RTL8197D), y)
 EXTRA_CFLAGS += -DCONFIG_BIG_ENDIAN -DCONFIG_PLATFORM_RTL8197D
@@ -2185,7 +2188,7 @@ rtk_core :=	core/rtw_cmd.o \
 		core/rtw_odm.o \
 		core/rtw_rm.o \
 		core/rtw_rm_fsm.o \
-		core/efuse/rtw_efuse.o 
+		core/efuse/rtw_efuse.o
 
 ifeq ($(CONFIG_SDIO_HCI), y)
 rtk_core += core/rtw_sdio.o
@@ -2216,6 +2219,7 @@ else
 
 export CONFIG_RTL8821CU = m
 
+module: modules
 all: modules
 
 modules:
